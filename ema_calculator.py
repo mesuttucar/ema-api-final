@@ -2,16 +2,17 @@ import requests
 import pandas as pd
 
 def get_binance_ohlcv(symbol: str, interval: str, limit: int = 1000):
-    url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
+    # Proxy üzerinden veri çekiyoruz
+    url = f"https://api3.binancevision.org/api/v3/klines?symbol={symbol}&interval={interval}&limit={limit}"
     try:
-        print(f"⏳ Veri çekiliyor: {symbol}, {interval}")
+        print(f"⏳ Proxy ile veri çekiliyor: {symbol}, {interval}")
 
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         data = response.json()
 
         if not isinstance(data, list) or len(data) < 50:
-            print("⛔ Yetersiz veri:", data)
+            print("⛔ Yetersiz veri (proxy):", data)
             return pd.DataFrame()
 
         df = pd.DataFrame(data, columns=[
@@ -21,8 +22,9 @@ def get_binance_ohlcv(symbol: str, interval: str, limit: int = 1000):
         ])
         df['close'] = df['close'].astype(float)
         return df
+
     except Exception as e:
-        print("❌ Binance veri çekme hatası:", e)
+        print("❌ Proxy üzerinden veri çekme hatası:", e)
         return pd.DataFrame()
 
 def find_best_ema_combination(symbol, interval, short_min, short_max, long_min, long_max):
@@ -30,11 +32,19 @@ def find_best_ema_combination(symbol, interval, short_min, short_max, long_min, 
 
     if df.empty:
         return {
-            "short": 0, "long": 0, "profit": -9999,
-            "equity_curve": [], "note": "Veri çekilemedi"
+            "short": 0,
+            "long": 0,
+            "profit": -9999,
+            "equity_curve": [],
+            "note": "Veri çekilemedi (proxy)"
         }
 
-    best = {"short": 0, "long": 0, "profit": -9999, "equity_curve": []}
+    best = {
+        "short": 0,
+        "long": 0,
+        "profit": -9999,
+        "equity_curve": []
+    }
 
     for short in range(short_min, short_max + 1):
         for long in range(long_min, long_max + 1):
